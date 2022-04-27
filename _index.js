@@ -9,7 +9,7 @@ let errcnt = 0;
 let volume = 200;
 let before = 0
 
-console.log('[MIC TEST] TIME SETTING:', execSync('ntpdate kr.pool.ntp.org').toString());
+//console.log('[MIC TEST] TIME SETTING:', execSync('ntpdate kr.pool.ntp.org').toString());
 execSync('gpio mode 7 out;gpio write 7 1;amixer -c Headphones sset Headphone 80%;amixer -c sndrpii2scard sset Boost 196');
 execSync('play /media/usb/start.mp3');
 setTimeout(function(){
