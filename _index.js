@@ -10,7 +10,7 @@ let volume = 200;
 let before = 0
 
 //console.log('[MIC TEST] TIME SETTING:', execSync('ntpdate kr.pool.ntp.org').toString());
-execSync('gpio mode 7 out;gpio write 7 1;amixer -c Headphones sset Headphone 80%;amixer -c sndrpii2scard sset Boost 196');
+execSync('gpio mode 7 out;gpio write 7 1;amixer -c Headphones sset Headphone 90%;amixer -c sndrpii2scard sset Boost 196');
 execSync('play /media/usb/start.mp3');
 setTimeout(function(){
   start();
@@ -77,6 +77,7 @@ function start(){
     if(isNaN(md)){
       execSync('play /media/usb/fail_mic.mp3')
       console.log('[MIC TEST] Fail');
+      execSync('amixer -c Headphones sset Headphone 80%');
       return;
     }
 
@@ -94,6 +95,7 @@ function start(){
         execSync('play /media/usb/fail_level.mp3')
         console.log('[MIC TEST] Fail');
       }
+      execSync('amixer -c Headphones sset Headphone 80%');
       return;
     } 
 
