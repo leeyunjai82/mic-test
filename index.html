@@ -1,78 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>USB Serial 통신</title>
-</head>
+
+<title>WebSerialTest</title>
+<head></head>
 <body>
-    <h1>USB Serial 통신</h1>
-    <button id="connectButton">연결</button>
-    <button id="sendButton" disabled>전송</button>
-    <div>
-        <textarea id="receivedText" rows="5" cols="50" placeholder="수신된 메시지"></textarea>
-    </div>
-    <div>
-        <input type="text" id="sendText" placeholder="전송할 메시지">
-    </div>
-
-    <script>
-        let device;
-        let inputEndpoint;
-        let outputEndpoint;
-        let receivedText = document.getElementById('receivedText');
-        let sendButton = document.getElementById('sendButton');
-        let sendText = document.getElementById('sendText');
-
-        async function connect() {
-            try {
-                device = await navigator.usb.requestDevice({ filters: [{ vendorId: 0x1A86, productId: 0x7523 }] });
-                await device.open();
-                await device.selectConfiguration(1);
-
-                const [interface] = device.configuration.interfaces;
-                await interface.claimInterface(interface.interfaceNumber);
-
-                inputEndpoint = interface.endpointIn;
-                outputEndpoint = interface.endpointOut;
-
-                sendButton.disabled = false;
-
-                listen();
-            } catch (error) {
-                console.error('연결 실패:', error);
-            }
-        }
-
-        async function sendMessage(message) {
-            if (!outputEndpoint) return;
-            await device.transferOut(outputEndpoint.endpointNumber, new TextEncoder().encode(message));
-        }
-
-        async function listen() {
-            while (true) {
-                let result = await device.transferIn(inputEndpoint.endpointNumber, 64);
-                let text = new TextDecoder().decode(result.data);
-                receivedText.value = text;
-            }
-        }
-
-        connectButton.addEventListener('click', async () => {
-            try {
-                await navigator.usb.requestDevice({ filters: [{ vendorId: 0x1A86, productId: 0x7523 }] });
-                connect();
-            } catch (error) {
-                console.error('USB 장치에 연결 권한이 없습니다.');
-            }
-        });
-
-        sendButton.addEventListener('click', () => {
-            let message = sendText.value.trim();
-            if (message) {
-                sendMessage(message);
-                sendText.value = '';
-            }
-        });
-    </script>
+  <input type="button" value="test" id="test"/>
+  <input type="button" value="read" id="read"/>
+  <figure>
+    <figcaption>로그</figcaption>
+    <dl id="log"></dl>
+  </figure>
 </body>
-</html>
+<script>
+  const serialTest = async () => {
+    const port = await navigator.serial.requestPort({});
+    console.log(port);
+  };
+  let usbA;
+  document.getElementById('test').addEventListener('click', () => {
+    navigator.usb.requestDevice({ filters: [{ 'vendorId': 0x1A86, 'productId': 0x7523 }]}).then(usb => {
+      usbA = usb;
+      console.log(usb);
+      usb.open()
+        .then(() => {
+          console.log(usb)
+          return usb.reset();
+        })
+        .then(() => {
+          console.log(usb)
+          return usb.selectConfiguration(1)
+        })
+        .then(() => {
+          console.log(usb)
+          return usb.claimInterface(0)
+        })
+        .then(() => {
+          console.log(usb)
+          return usb.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x00,
+            index: 0x00,
+            value: 0x01
+          })
+        })
+        .then(() => {
+          console.log(usb)
+          return usb.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x07,
+            index: 0x00,
+            value: 0x03 | 0x0100 | 0x0200
+          })
+        })
+        .then(() => {
+          console.log(usb)
+          return usb.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x01,
+            index: 0x00,
+            value: 0x384000 / 115200
+          })
+        })
+        .then(async () => {
+          const r = await usb.transferIn(1, 512)
+          console.log(new Uint8Array(r.data.buffer));
+        });
+    });
+  });
+  
+  const log = document.getElementById('log');
+
+  const logger = str => {
+    const liE = document.createElement('dd');
+    liE.innerText = str;
+    log.appendChild(liE);
+    const childs = log.getElementsByTagName('dd');
+    if (childs.length > 20) log.removeChild(childs[0]);
+    console.log(str);
+  };
+
+  let utf8decoder = new TextDecoder();
+  document.getElementById('read').addEventListener('click', async () => {
+    if (!usbA) return;
+    const r = await usbA.transferIn(1, 64)
+    logger(utf8decoder.decode(new Uint8Array(r.data.buffer)));
+  });
+</script>
