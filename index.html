@@ -6,6 +6,11 @@
     <title>examplepage</title>
     <script>
 
+      const textEncoder = new TextEncoderStream();
+const textDecoder = new TextDecoderStream();
+const reader = textDecoder.readable.getReader();
+const writer = textEncoder.writable.getWriter();
+     
     async function send()
    {
   writer.write("#AAA:BBB!");
@@ -18,12 +23,10 @@
             // Wait for the serial port to open.
             await port.open({ baudRate: 9600 });
 
-const textEncoder = new TextEncoderStream();
-const textDecoder = new TextDecoderStream();
+
 const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
 const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
-const reader = textDecoder.readable.getReader();
-const writer = textEncoder.writable.getWriter();
+
      
 // 직렬 장치에서 오는 데이터를 듣는다.
 while (true) {
