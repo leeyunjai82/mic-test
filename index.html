@@ -12,11 +12,11 @@
     const writer = textEncoder.writable.getWriter();
     const command = document.getElementById('command');
 
-    document.getElementById('send').addEventListener('click', async () => {
+    document.getElementById('send').addEventListener('click', () => {
       writer.write(command.value);
     });
     
-    document.getElementById('connect').addEventListener('click', async () => {
+    document.getElementById('connect').addEventListener('click', () => {
       const port = await navigator.serial.requestPort();
       console.log(port)
 
