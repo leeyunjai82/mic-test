@@ -2,88 +2,19 @@
 <title>WebSerialTest</title>
 <head></head>
 <body>
-  <input type="button" value="test" id="test"/>
-  <input type="button" value="read" id="read"/>
-  <figure>
-    <figcaption>로그</figcaption>
-    <dl id="log"></dl>
-  </figure>
+AAA
 </body>
 <script>
-  const serialTest = async () => {
-    const port = await navigator.serial.requestPort({});
-    console.log(port);
-  };
-  let usbA;
-  document.getElementById('test').addEventListener('click', () => {
-    navigator.usb.requestDevice({ filters: [{ 'vendorId': 0x1A86, 'productId': 0x7523 }]}).then(usb => {
-      usbA = usb;
-      console.log(usb);
-      usb.open()
-        .then(() => {
-          console.log(usb)
-          return usb.reset();
-        })
-        .then(() => {
-          console.log(usb)
-          return usb.selectConfiguration(1)
-        })
-        .then(() => {
-          console.log(usb)
-          return usb.claimInterface(0)
-        })
-        .then(() => {
-          console.log(usb)
-          return usb.controlTransferOut({
-            requestType: 'vendor',
-            recipient: 'device',
-            request: 0x00,
-            index: 0x00,
-            value: 0x01
-          })
-        })
-        .then(() => {
-          console.log(usb)
-          return usb.controlTransferOut({
-            requestType: 'vendor',
-            recipient: 'device',
-            request: 0x07,
-            index: 0x00,
-            value: 0x03 | 0x0100 | 0x0200
-          })
-        })
-        .then(() => {
-          console.log(usb)
-          return usb.controlTransferOut({
-            requestType: 'vendor',
-            recipient: 'device',
-            request: 0x01,
-            index: 0x00,
-            value: 0x384000 / 115200
-          })
-        })
-        .then(async () => {
-          const r = await usb.transferIn(1, 512)
-          console.log(new Uint8Array(r.data.buffer));
-        });
-    });
-  });
-  
-  const log = document.getElementById('log');
 
-  const logger = str => {
-    const liE = document.createElement('dd');
-    liE.innerText = str;
-    log.appendChild(liE);
-    const childs = log.getElementsByTagName('dd');
-    if (childs.length > 20) log.removeChild(childs[0]);
-    console.log(str);
-  };
+// Filter on devices with the Nintendo Switch Joy-Con USB Vendor/Product IDs.
+const filters = [
+  {
+    vendorId: 0x1A86, 
+    productId: 0x7523
+  },
+];
 
-  let utf8decoder = new TextDecoder();
-  document.getElementById('read').addEventListener('click', async () => {
-    if (!usbA) return;
-    const r = await usbA.transferIn(1, 64)
-    logger(utf8decoder.decode(new Uint8Array(r.data.buffer)));
-  });
+// Prompt user to select a Joy-Con device.
+const [device] = await navigator.hid.requestDevice({ filters });
+await device.open();
 </script>
