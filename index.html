@@ -22,8 +22,8 @@
     const writer = textEncoder.writable.getWriter();
     const command = document.getElementById('command');
 
-    document.getElementById('send').addEventListener('click', () => {
-      writer.write(command.value);
+    document.getElementById('send').addEventListener('click', async () => {
+      await writer.write(command.value);
     });
     
     document.getElementById('connect').addEventListener('click', async () => { // 'async' 키워드를 추가하여 비동기 함수로 변경
