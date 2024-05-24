@@ -1,32 +1,281 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebUSB Example</title>
-</head>
-<body>
-    <button id="connect">Connect to USB Device</button>
-    <script>
-        document.getElementById('connect').addEventListener('click', async () => {
-            try {
-                const device = await navigator.usb.requestDevice({
-                    filters: [{ vendorId: 0x1A86 }] // 여기에 당신의 장치 vendorId를 넣으세요
-                });
-                console.log('Device selected:', device);
+<!--
+Projeto Express 01 - Webserial com Arudino e Chartist 
+Autor: ExtremeMakers - www.extrememakers.net
 
-                await device.open(); // 장치 열기
-                console.log('Device opened successfully.');
-                
-                // 장치와 통신하기 위한 예제
-                await device.selectConfiguration(1);
-                await device.claimInterface(0);
-                console.log('Device configured and interface claimed.');
-                
-            } catch (error) {
-                console.error('Error:', error);
+Link da Bib. - https://gionkunz.github.io/chartist-js/
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebSerial com Arduino e Chartist</title>
+  
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+    <style>
+      body {
+        background-color: #fffafa;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      #divContainer {
+        width: 700px;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 5px;
+        border-color: rgb(34, 33, 34);
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #divConfig {
+        height: 120px;
+        width: 500px;
+        margin-bottom: 12px;
+        border-color: rgb(61, 61, 61);
+        padding-left: 12px;
+        padding-right: 12px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        color: black;
+      }
+
+      h1 {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+        font-size: 20px;
+        width: 100%;
+        text-align: center;
+        font-weight: 500;
+        color: #1e90ff;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #divChart {
+        height: 300px;
+        width: 600px;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 5px;
+        border-color: rgb(61, 61, 61);
+        margin-bottom: 12px;
+        padding-top: 12px;
+      }
+
+      .ct-label {
+        font-family: "Arial", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+      }
+
+      .ct-grid .ct-label {
+        font-size: 12px;
+      }
+
+      .ct-horizontal {
+        font-size: 8px;
+      }
+
+      .ct-series .ct-line {
+        stroke: blue;
+        stroke-width: 1px;
+      }
+
+      .ct-series .ct-point {
+        stroke: blue;
+        stroke-width: 2px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>ExtremeMakers</h1>
+    <h1>Projeto Express 01 : WebSerial com Arduino e Chartist</h1>
+    <div id="divContainer">
+      <div id="divConfig">
+        <h1>Configurações</h1>
+        <div>
+          <label for="baudRateSelect">Baudrate:</label>
+          <select id="baudRateSelect">
+            <option value="300">300</option>
+            <option value="1200">1200</option>
+            <option value="2400">2400</option>
+            <option value="4800">4800</option>
+            <option value="9600">9600</option>
+            <option value="14400">14400</option>
+            <option value="19200">19200</option>
+            <option value="28800">28800</option>
+            <option value="38400">38400</option>
+            <option value="57600">57600</option>
+            <option value="115200">115200</option>
+          </select>
+          <button id="conectarBtn">Conectar</button>
+        </div>
+
+        <div><span id="status">STATUS</span></div>
+        <div></div>
+        <div>
+          <span id="status">Último valor recebido:</span>
+          <span id="spanValorRecebido">VALOR RECEBIDO</span>
+        </div>
+      </div>
+      <h1>Gráfico</h1>
+      <div id="divChart"></div>
+    </div>
+
+    <script>
+      let porta;
+      let conectado = false;
+      let grafico;
+      let dadosGrafico = [];
+
+      let baudRateSelect = document.getElementById("baudRateSelect");
+      document.getElementById("baudRateSelect").value = "9600";
+
+      async function conectarSerial() {
+        const baudRateSelecionado = parseInt(baudRateSelect.value, 10);
+        try {
+          porta = await navigator.serial.requestPort();
+          await porta.open({ baudRate: baudRateSelecionado });
+          conectado = true;
+          atualizaStatus();
+          lerSerial(porta);
+        } catch (error) {
+          console.error("Erro ao conectar à porta serial:", error);
+        }
+      }
+
+      async function desconectarSerial() {
+        try {
+          conectado = false;
+          atualizaStatus();
+        } catch (error) {
+          console.error("Erro ao desconectar da porta serial:", error);
+        }
+      }
+
+      async function lerSerial(porta) {
+        const reader = porta.readable.getReader();
+        let dadoRecebido = "";
+
+        while (conectado) {
+          try {
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
             }
-        });
+
+            const decoder = new TextDecoder();
+            const chunk = decoder.decode(value);
+            dadoRecebido += chunk;
+
+            // Verifica se a linha foi completamente recebida (com base na quebra de linha)
+            if (dadoRecebido.includes("\n")) {
+              const linhas = dadoRecebido.split("\n");
+              dadoRecebido = linhas.pop(); // Mantém a última linha que pode estar incompleta
+
+              // Processa cada linha recebida
+              for (const linha of linhas) {
+                const linhaTrim = linha.trim();
+                if (linhaTrim.length > 0) {
+                  const timestamp = new Date();
+                  const dado = Number(linhaTrim);
+                  const elementoValorRecebido =
+                    document.getElementById("spanValorRecebido");
+                  elementoValorRecebido.textContent =
+                    `${formatarTimestamp(timestamp)}` + " - " + `${dado}`;
+
+                  // Adiciona o dado recebido ao array de dados do gráfico
+                  dadosGrafico.push({ x: timestamp, y: dado });
+
+                  // Limita a quantidade de dados mostrados no gráfico
+                  if (dadosGrafico.length > 100) {
+                    dadosGrafico.shift();
+                  }
+                }
+              }
+
+              // Atualiza o gráfico
+              atualizaGrafico();
+            }
+          } catch (error) {
+            console.error("Erro na leitura da porta serial:", error);
+          }
+        }
+
+        reader.releaseLock();
+        porta.close();
+      }
+
+      function atualizaStatus() {
+        const elementoStatus = document.getElementById("status");
+        if (conectado) {
+          elementoStatus.textContent = "Conectado à porta serial";
+        } else {
+          elementoStatus.textContent = "Desconectado da porta serial";
+        }
+      }
+
+      function formatarTimestamp(timestamp) {
+        const horas = String(timestamp.getHours()).padStart(2, "0");
+        const minutos = String(timestamp.getMinutes()).padStart(2, "0");
+        const segundos = String(timestamp.getSeconds()).padStart(2, "0");
+        return `${horas}:${minutos}:${segundos}`;
+      }
+
+      function atualizaGrafico() {
+        if (grafico) {
+          grafico.update({ series: [dadosGrafico] });
+        } else {
+          grafico = new Chartist.Line(
+            "#divChart",
+            {
+              series: [dadosGrafico],
+            },
+            {
+              showPoint: false,
+              axisY: {
+                type: Chartist.FixedScaleAxis,
+                ticks: [-800, -600, -400, -200, 0, 200, 400, 600, 800], // Valores fixos desejados
+                high: 800, // Valor máximo desejado
+                low: -800, // Valor mínimo desejado
+              },
+              axisX: {
+                showGrid: false
+              }
+            }
+          );
+        }
+      }
+
+      function toggleConexao() {
+        var botao = document.getElementById("conectarBtn");
+        if (conectado) {
+          desconectarSerial();
+          botao.innerHTML = "Conectar";
+        } else {
+          conectarSerial();
+          botao.innerHTML = "Desconectar";
+        }
+      }
+
+      document
+        .getElementById("conectarBtn")
+        .addEventListener("click", toggleConexao);
     </script>
-</body>
+  </body>
 </html>
