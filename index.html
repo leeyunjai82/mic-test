@@ -21,7 +21,7 @@ const reader = textDecoder.readable.getReader();
 const writer = textEncoder.writable.getWriter();
 
 setInterfaval(()=> {
-  await writer.write("hello!");
+  await writer.write("#AAA:BBB!");
 }, 1000);
       
 // 직렬 장치에서 오는 데이터를 듣는다.
