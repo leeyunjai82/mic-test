@@ -4,6 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>examplepage</title>
+  </head>
+  <body>
+
+   <button id="connect">Connect</button>
+
+   <br>
+   <input type="text" id="command">
+   <button id="send">Send</button>
+  </body>
+
     <script>
 
     const textEncoder = new TextEncoderStream();
@@ -40,14 +50,5 @@
 
     if ("serial" in navigator) alert("Your browser supports Web Serial API!");
     else alert("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");
-    </script>
-  </head>
-  <body>
-
-   <button id="connect">Connect</button>
-
-   <br>
-   <input type="text" id="command">
-   <button id="send">Send</button>
-  </body>
+    </script>  
 </html>
