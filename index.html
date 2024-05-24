@@ -1,126 +1,70 @@
-<html>
-  <head>
-    <title>WebUSB Serial Sample Application</title>
-  </head>
-
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USB Serial 통신</title>
+</head>
 <body>
-  <script>
-var serial = {};
+    <h1>USB Serial 통신</h1>
+    <button id="connectButton">연결</button>
+    <button id="sendButton" disabled>전송</button>
+    <div>
+        <textarea id="receivedText" rows="5" cols="50" placeholder="수신된 메시지"></textarea>
+    </div>
+    <div>
+        <input type="text" id="sendText" placeholder="전송할 메시지">
+    </div>
 
-(function() {
-  'use strict';
+    <script>
+        let device;
+        let inputEndpoint;
+        let outputEndpoint;
+        let receivedText = document.getElementById('receivedText');
+        let sendButton = document.getElementById('sendButton');
+        let sendText = document.getElementById('sendText');
 
-  serial.getPorts = function() {
-    return navigator.usb.getDevices().then(devices => {
-      return devices.map(device => new serial.Port(device));
-    });
-  };
+        async function connect() {
+            try {
+                device = await navigator.usb.requestDevice({ filters: [{ vendorId: 0x1A86, productId: 0x7523 }] });
+                await device.open();
+                await device.selectConfiguration(1);
 
-  serial.requestPort = function() {
-    const filters = [
-      { 'vendorId': 0x2fe3, 'productId': 0x0100 },
-      { 'vendorId': 0x2fe3, 'productId': 0x00a },
-      { 'vendorId': 0x8086, 'productId': 0xF8A1 },
-      { 'vendorId': 0x1A86, 'productId': 0x7523 },      
-    ];
-    return navigator.usb.requestDevice({ 'filters': filters }).then(
-      device => new serial.Port(device)
-    );
-  }
+                const [interface] = device.configuration.interfaces;
+                await interface.claimInterface(interface.interfaceNumber);
 
-  serial.Port = function(device) {
-    this.device_ = device;
-  };
+                inputEndpoint = interface.endpointIn;
+                outputEndpoint = interface.endpointOut;
 
-  serial.Port.prototype.connect = function() {
-    let readLoop = () => {
-      const {
-        endpointNumber
-      } = this.device_.configuration.interfaces[0].alternate.endpoints[0]
-      this.device_.transferIn(endpointNumber, 64).then(result => {
-        this.onReceive(result.data);
-        readLoop();
-      }, error => {
-        this.onReceiveError(error);
-      });
-    };
+                sendButton.disabled = false;
 
-    return this.device_.open({ 'baudRate': 9600 })
-        .then(() => {
-          if (this.device_.configuration === null) {
-            return this.device_.selectConfiguration(1);
-          }
-        })
-        .then(() => this.device_.claimInterface(0))
-        .then(() => {
-          readLoop();
+                listen();
+            } catch (error) {
+                console.error('연결 실패:', error);
+            }
+        }
+
+        async function sendMessage(message) {
+            if (!outputEndpoint) return;
+            await device.transferOut(outputEndpoint.endpointNumber, new TextEncoder().encode(message));
+        }
+
+        async function listen() {
+            while (true) {
+                let result = await device.transferIn(inputEndpoint.endpointNumber, 64);
+                let text = new TextDecoder().decode(result.data);
+                receivedText.value = text;
+            }
+        }
+
+        connectButton.addEventListener('click', connect);
+        sendButton.addEventListener('click', () => {
+            let message = sendText.value.trim();
+            if (message) {
+                sendMessage(message);
+                sendText.value = '';
+            }
         });
-  };
-
-  serial.Port.prototype.disconnect = function() {
-    return this.device_.close();
-  };
-
-  serial.Port.prototype.send = function(data) {
-    const {
-      endpointNumber
-    } = this.device_.configuration.interfaces[0].alternate.endpoints[1]
-    return this.device_.transferOut(endpointNumber, data);
-  };
-})();
-
-let port;
-
-function connect() {
-  port.connect().then(() => {
-    port.onReceive = data => {
-      let textDecoder = new TextDecoder();
-      console.log("Received:", textDecoder.decode(data));
-      document.getElementById('output').value += textDecoder.decode(data);
-    }
-    port.onReceiveError = error => {
-      console.error(error);
-      document.querySelector("#connect").style = "visibility: initial";
-      port.disconnect();
-    };
-  });
-}
-
-function send(string) {
-  console.log("sending to serial:" + string.length);
-  if (string.length === 0)
-    return;
-  console.log("sending to serial: [" + string +"]\n");
-
-  let view = new TextEncoder('utf-8').encode(string);
-  console.log(view);
-  if (port) {
-    port.send(view);
-  }
-};
-
-window.onload = _ => {
-  document.querySelector("#connect").onclick = function() {
-    serial.requestPort().then(selectedPort => {
-      port = selectedPort;
-      this.style = "visibility: hidden";
-      connect();
-    });
-  }
-
-  document.querySelector("#submit").onclick = () => {
-    let source = document.querySelector("#editor").value;
-    send(source);
-  }
-}
-
-</script>
- <button id="connect" style="visibility: initial">Connect To WebUSB Device</button>
- <br><br><label for="title">Sender: </label> <br>
- <textarea id="editor", rows="25" cols="80" id="source">WebUSB!</textarea>
- <br><button id="submit">Send</button>
- <br><br>
- <label for="title">Receiver: </label> </br>
- <textarea id="output", rows="25" cols="80" id="source"></textarea>
+    </script>
 </body>
+</html>
