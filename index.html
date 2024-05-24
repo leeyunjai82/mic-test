@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>examplepage</title>
     <script>
+
+    async function send()
+   {
+  writer.write("#AAA:BBB!");
+  }
     async function start() 
     {
             // Prompt user to select any serial port.
@@ -19,11 +24,7 @@ const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
 const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
 const reader = textDecoder.readable.getReader();
 const writer = textEncoder.writable.getWriter();
-
-setInterfaval(()=> {
-  writer.write("#AAA:BBB!");
-}, 1000);
-      
+     
 // 직렬 장치에서 오는 데이터를 듣는다.
 while (true) {
   const { value, done } = await reader.read();
@@ -48,6 +49,7 @@ while (true) {
     </script>
   </head>
   <body>
-   <button onclick="start()">Click me</button> 
+   <button onclick="start()">Click me</button>
+   <button onclick="send()">Send</button>
   </body>
 </html>
