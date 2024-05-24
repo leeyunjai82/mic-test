@@ -18,7 +18,7 @@
             // Wait for the serial port to open.
             await port.open({ baudRate: 9600 });
 
-
+const textEncoder = new TextEncoderStream();
 const textDecoder = new TextDecoderStream();
 const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
 const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
