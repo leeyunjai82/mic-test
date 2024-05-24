@@ -1,23 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>examplepage</title>
+    <script>
+    async function start() 
+    {
+            // Prompt user to select any serial port.
+            const port = await navigator.serial.requestPort();
 
-<title>WebSerialTest</title>
-<head></head>
-<body>
-AAA
-</body>
-<script>
-
-// Filter on devices with the Nintendo Switch Joy-Con USB Vendor/Product IDs.
-const filters = [
-  {
-    vendorId: 0x1A86, 
-    productId: 0x7523
-  },
-];
-
-navigator.usb.requestDevice({ filters: filters })
-.then(device => {
-  console.log(device.productName);      // "Arduino Micro"
-  console.log(device.manufacturerName); // "Arduino LLC"
-})
-.catch(error => { console.error(error); });
-</script>
+            // Wait for the serial port to open.
+            await port.open({ baudRate: 9600 });
+    }
+    
+    if ("serial" in navigator) {
+  alert("Your browser supports Web Serial API!");
+}
+    else {alert("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");};
+    
+    </script>
+  </head>
+  <body>
+   <button onclick="start()">Click me</button> 
+  </body>
+</html>
