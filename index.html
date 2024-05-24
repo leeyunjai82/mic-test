@@ -14,7 +14,10 @@ const filters = [
   },
 ];
 
-// Prompt user to select a Joy-Con device.
-const [device] = await navigator.hid.requestDevice({ filters });
-await device.open();
+navigator.usb.requestDevice({ filters: filters })
+.then(device => {
+  console.log(device.productName);      // "Arduino Micro"
+  console.log(device.manufacturerName); // "Arduino LLC"
+})
+.catch(error => { console.error(error); });
 </script>
