@@ -6,52 +6,49 @@
     <title>examplepage</title>
     <script>
 
-      const textEncoder = new TextEncoderStream();
-const textDecoder = new TextDecoderStream();
-const reader = textDecoder.readable.getReader();
-const writer = textEncoder.writable.getWriter();
-     
-    async function send()
-   {
-  writer.write("#AAA:BBB!");
-  }
-    async function start() 
+    const textEncoder = new TextEncoderStream();
+    const textDecoder = new TextDecoderStream();
+    const reader = textDecoder.readable.getReader();
+    const writer = textEncoder.writable.getWriter();
+    const command = document.getElementById('command');
+
+    document.querySelector('send').addEventListener('click', async () => {
     {
-            // Prompt user to select any serial port.
-            const port = await navigator.serial.requestPort();
-
-            // Wait for the serial port to open.
-            await port.open({ baudRate: 9600 });
-
-
-const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
-const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
-
-     
-// 직렬 장치에서 오는 데이터를 듣는다.
-while (true) {
-  const { value, done } = await reader.read();
-  if (done) {
-    // 나중에 시리얼 포트가 닫힐 수 있도록 해준다.
-    reader.releaseLock();
-    break;
-  }
-  console.log(value);
-}
-      
+      writer.write(command.value);
     }
     
-    if ("serial" in navigator) {
-  alert("Your browser supports Web Serial API!");
-}
-    else {alert("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");};
+    document.querySelector('connect').addEventListener('click', async () => {
+      const port = await navigator.serial.requestPort();
+      console.log(port)
 
+      // Wait for the serial port to open.
+      await port.open({ baudRate: 9600 });
 
-      
+      const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+      const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+
+      // 직렬 장치에서 오는 데이터를 듣는다.
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          // 나중에 시리얼 포트가 닫힐 수 있도록 해준다.
+          reader.releaseLock();
+          break;
+        }
+        console.log(value);
+      }
+    });
+
+    if ("serial" in navigator) alert("Your browser supports Web Serial API!");
+    else alert("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");
     </script>
   </head>
   <body>
-   <button onclick="start()">Click me</button>
-   <button onclick="send()">Send</button>
+
+   <button id="connect">Connect</button>
+
+   <br>
+   <input type="text" id="command">
+   <button id="send">Send</button>
   </body>
 </html>
