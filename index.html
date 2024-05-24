@@ -23,6 +23,7 @@
     const command = document.getElementById('command');
 
     document.getElementById('send').addEventListener('click', async () => {
+      console.log(command.value);
       await writer.write(command.value);
     });
     
