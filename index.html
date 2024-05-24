@@ -57,7 +57,15 @@
             }
         }
 
-        connectButton.addEventListener('click', connect);
+        connectButton.addEventListener('click', async () => {
+            try {
+                await navigator.usb.requestDevice({ filters: [{ vendorId: 0xVendor_ID, productId: 0xProduct_ID }] });
+                connect();
+            } catch (error) {
+                console.error('USB 장치에 연결 권한이 없습니다.');
+            }
+        });
+
         sendButton.addEventListener('click', () => {
             let message = sendText.value.trim();
             if (message) {
