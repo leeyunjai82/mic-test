@@ -15,7 +15,7 @@
     document.querySelector('send').addEventListener('click', async () => {
     {
       writer.write(command.value);
-    }
+    });
     
     document.querySelector('connect').addEventListener('click', async () => {
       const port = await navigator.serial.requestPort();
