@@ -14,10 +14,16 @@
             await port.open({ baudRate: 9600 });
 
 
-**const textDecoder = new TextDecoderStream();**
-**const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);**
-**const reader = textDecoder.readable.getReader();**
+const textDecoder = new TextDecoderStream();
+const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+const reader = textDecoder.readable.getReader();
+const writer = textEncoder.writable.getWriter();
 
+setInterfaval(()=> {
+  await writer.write("hello!");
+}, 1000);
+      
 // 직렬 장치에서 오는 데이터를 듣는다.
 while (true) {
   const { value, done } = await reader.read();
