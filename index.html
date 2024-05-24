@@ -12,13 +12,31 @@
 
             // Wait for the serial port to open.
             await port.open({ baudRate: 9600 });
+
+
+const reader = port.readable.getReader();
+
+// 직렬 장치로부터 오는 데이터를 듣는다.
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) {
+    // 나중에 시리얼 포트가 클로즈될 수 있도록 해준다.
+    reader.releaseLock();
+    break;
+  }
+  // value는 Uint8Array이다.
+  console.log(value);
+}
+      
     }
     
     if ("serial" in navigator) {
   alert("Your browser supports Web Serial API!");
 }
     else {alert("Your browser does not support Web Serial API, the latest version of Google Chrome is recommended!");};
-    
+
+
+      
     </script>
   </head>
   <body>
