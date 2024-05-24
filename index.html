@@ -26,7 +26,7 @@
       writer.write(command.value);
     });
     
-    document.getElementById('connect').addEventListener('click', () => {
+    document.getElementById('connect').addEventListener('click', async () => { // 'async' 키워드를 추가하여 비동기 함수로 변경
       const port = await navigator.serial.requestPort();
       console.log(port)
 
